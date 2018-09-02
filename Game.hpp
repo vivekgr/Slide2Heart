@@ -17,6 +17,8 @@ struct Game {
 	Game();
 	~Game();
 
+	int chck_index=0;
+
 	//handle_event is called when new mouse or keyboard events are received:
 	// (note that this might be many times per frame or never)
 	//The function should return 'true' if it handled the event.
@@ -27,6 +29,12 @@ struct Game {
 
 	//draw is called after update:
 	void draw(glm::uvec2 drawable_size);
+
+	// Reset the game
+	void reset();
+
+	//check collision
+	bool check_collision(int x,int y,int chck_index);
 
 	//------- opengl resources -------
 
@@ -58,6 +66,15 @@ struct Game {
 		GLsizei count = 0;
 	};
 
+	Mesh gummy_mesh;
+	Mesh riflector_mesh;
+	Mesh floor_mesh;
+	Mesh goal_mesh;
+	Mesh hole_mesh;
+	Mesh player_mesh;
+	Mesh wall_mesh;
+	Mesh starpoint_mesh;
+
 	Mesh tile_mesh;
 	Mesh cursor_mesh;
 	Mesh doll_mesh;
@@ -68,7 +85,8 @@ struct Game {
 
 	//------- game state -------
 
-	glm::uvec2 board_size = glm::uvec2(5,4);
+	glm::uvec2 board_size = glm::uvec2(4,4);  // Board size 4*4
+	//std::vector<std::vector<Mesh const *> > matrix;
 	std::vector< Mesh const * > board_meshes;
 	std::vector< glm::quat > board_rotations;
 
@@ -79,6 +97,11 @@ struct Game {
 		bool roll_right = false;
 		bool roll_up = false;
 		bool roll_down = false;
+		bool slide_left=false;
+		bool slide_right=false;
+		bool slide_up=false;
+		bool slide_down=false;
+		bool reset=false;
 	} controls;
 
 };

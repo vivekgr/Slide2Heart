@@ -109,6 +109,7 @@ Game::Game() {
 	static_assert(sizeof(Vertex) == 28, "Vertex should be packed.");
 
 	{ //load mesh data from a binary blob:
+		std::cout<<" before loading mesh data "<<std::endl;
 		std::ifstream blob(data_path("meshes.blob"), std::ios::binary);
 		//The blob will be made up of three chunks:
 		// the first chunk will be vertex data (interleaved position/normal/color)
@@ -118,10 +119,12 @@ Game::Game() {
 		//read vertex data:
 		std::vector< Vertex > vertices;
 		read_chunk(blob, "dat0", &vertices);
+		std::cout<<" Read Vertex data "<<std::endl;
 
 		//read character data (for names):
 		std::vector< char > names;
 		read_chunk(blob, "str0", &names);
+		std::cout<<" Read Char data ";
 
 		//read index:
 		struct IndexEntry {
@@ -129,8 +132,14 @@ Game::Game() {
 			uint32_t name_end;
 			uint32_t vertex_begin;
 			uint32_t vertex_end;
-		};
+		}; 
+
+		std::cout<<" Read Index Entry "<<std::endl;
+
+	
+	
 		static_assert(sizeof(IndexEntry) == 16, "IndexEntry should be packed.");
+
 
 		std::vector< IndexEntry > index_entries;
 		read_chunk(blob, "idx0", &index_entries);
@@ -144,6 +153,8 @@ Game::Game() {
 		glBindBuffer(GL_ARRAY_BUFFER, meshes_vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		std::cout<<"upload vertex data to the graphics card: "<<std::endl;
 
 		//create map to store index entries:
 		std::map< std::string, Mesh > index;
@@ -164,6 +175,7 @@ Game::Game() {
 				throw std::runtime_error("duplicate name in index.");
 			}
 		}
+		std::cout<<"create map to store index entries:"<<std::endl;
 
 		//look up into index map to extract meshes:
 		auto lookup = [&index](std::string const &name) -> Mesh {
@@ -173,11 +185,23 @@ Game::Game() {
 			}
 			return f->second;
 		};
-		tile_mesh = lookup("Tile");
-		cursor_mesh = lookup("Cursor");
-		doll_mesh = lookup("Doll");
-		egg_mesh = lookup("Egg");
-		cube_mesh = lookup("Cube");
+
+		gummy_mesh = lookup("Circle");
+		riflector_mesh=lookup("Riflector");
+		floor_mesh=lookup("Floor");
+		goal_mesh=lookup("Goal");
+		hole_mesh=lookup("Hole");
+		player_mesh=lookup("Player");
+		starpoint_mesh=lookup("Starpoint");
+		wall_mesh=lookup("Wall");
+
+		std::cout<<"look up into index map to extract meshes:"<<std::endl;
+
+		// hemisphere_mesh=lookup("Hemisphere");
+		// cursor_mesh = lookup("Cursor");
+		// doll_mesh = lookup("Doll");
+		// egg_mesh = lookup("Egg");
+		// cube_mesh = lookup("Cube");
 	}
 
 	{ //create vertex array object to hold the map from the mesh vertex buffer to shader program attributes:
@@ -186,6 +210,8 @@ Game::Game() {
 		glBindBuffer(GL_ARRAY_BUFFER, meshes_vbo);
 		//note that I'm specifying a 3-vector for a 4-vector attribute here, and this is okay to do:
 		glVertexAttribPointer(simple_shading.Position_vec4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLbyte *)0 + offsetof(Vertex, Position));
+
+		// It is necessary to specify this
 		glEnableVertexAttribArray(simple_shading.Position_vec4);
 		if (simple_shading.Normal_vec3 != -1U) {
 			glVertexAttribPointer(simple_shading.Normal_vec3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLbyte *)0 + offsetof(Vertex, Normal));
@@ -200,19 +226,66 @@ Game::Game() {
 
 	GL_ERRORS();
 
-	//----------------
+	//---------------- GAME SETUP-------------
 	//set up game board with meshes and rolls:
+	//board meshes is a vector of type Mesh
+	//matrix.reserve(board_size.x * board_size.y);
 	board_meshes.reserve(board_size.x * board_size.y);
 	board_rotations.reserve(board_size.x * board_size.y);
+
+	// What is this? Random number generator
 	std::mt19937 mt(0xbead1234);
+	int randIndx;
+	// Vector of meshes (Of objects which are going to be place inside the grid)
+	std::vector< Mesh const * > meshes{&wall_mesh,&starpoint_mesh,&gummy_mesh,&floor_mesh};
 
-	std::vector< Mesh const * > meshes{ &doll_mesh, &egg_mesh, &cube_mesh };
+	for (uint32_t i = 0; i < board_size.x * board_size.y; ++i) // ??
+	{
+		if(i==0)
+		{
+			// Initialize the player at the top left corner of the board
+			board_meshes.emplace_back(&floor_mesh);
 
-	for (uint32_t i = 0; i < board_size.x * board_size.y; ++i) {
-		board_meshes.emplace_back(meshes[mt()%meshes.size()]);
-		board_rotations.emplace_back(glm::quat());
+		}
+		// else if(i==5||i==2||i==15)
+		// {
+		// 	// Static walls at the above locations
+		// 	board_meshes.emplace_back(&wall_mesh);
+		// 	chck_index=i;
+		// }
+		// else if(i==14||i==8)
+		// {
+		// 	// Static starpoints  at the above locations
+		// 	board_meshes.emplace_back(&starpoint_mesh);
+		// 	//score increment
+		// }
+		// else if (i==11)
+		// {
+		// 	//Static goal pos
+		// 	board_meshes.emplace_back(&goal_mesh);
+		// }
+		else
+		{
+			randIndx=mt()%meshes.size();
+			board_meshes.emplace_back(meshes[randIndx]);
+			board_rotations.emplace_back(glm::quat());
+
+			// if()
+		}
+		
 	}
+
+	// for (uint32_t i = 0; i < board_size.x; ++i) 
+	// {
+	// 		for (uint32_t j = 0; j < board_size.y; ++j) 
+	// 		{
+	// 			matrix[i][j]=meshes[mt()%meshes.size()];
+	// 		}
+	// }
+	
+	
 }
+
 
 Game::~Game() {
 	glDeleteVertexArrays(1, &meshes_for_simple_shading_vao);
@@ -248,7 +321,19 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 			return true;
 		}
 	}
-	//move cursor on L/R/U/D press:
+
+
+	// If Reset Button 'R' is pressed
+	if (evt.type == SDL_KEYDOWN || evt.type == SDL_KEYUP) 
+	{
+		if (evt.key.keysym.scancode == SDL_SCANCODE_R) {
+			controls.reset = (evt.type == SDL_KEYDOWN);
+			return true;
+		}
+	}
+
+
+	//move player on L/R/U/D press:
 	if (evt.type == SDL_KEYDOWN && evt.key.repeat == 0) {
 		if (evt.key.keysym.scancode == SDL_SCANCODE_LEFT) {
 			if (cursor.x > 0) {
@@ -261,8 +346,20 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 			}
 			return true;
 		} else if (evt.key.keysym.scancode == SDL_SCANCODE_UP) {
-			if (cursor.y + 1 < board_size.y) {
-				cursor.y += 1;
+			if (cursor.y + 1 < board_size.y) 
+			{
+				std::cout<<"x"<<cursor.x<<std::endl;
+				std::cout<<"y"<<cursor.y<<std::endl;
+				std::cout<<"chk"<<chck_index<<std::endl;
+				if(Game::check_collision(cursor.x,cursor.y,chck_index))
+				{
+					cursor.y=cursor.y;
+				}
+				else
+				{
+					cursor.y += 1;
+				}
+
 			}
 			return true;
 		} else if (evt.key.keysym.scancode == SDL_SCANCODE_DOWN) {
@@ -272,6 +369,23 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 			return true;
 		}
 	}
+	return false;
+}
+
+
+bool Game::check_collision(int x, int y, int chck_index)
+{
+	std::cout<<"check collision"<<std::endl;
+	std::cout<<"x+1"<<x+1;
+	std::cout<<"y+1"<<y+1;
+
+	if((x==1&&(y+1)==1)&&chck_index==15)
+	{
+		std::cout<<"collision detected";
+		return true;
+	}
+	//else if((x+1==2&&y==0)&&chck_index==15)
+
 	return false;
 }
 
@@ -291,6 +405,20 @@ void Game::update(float elapsed) {
 	if (controls.roll_down) {
 		dr = glm::angleAxis(-amt, glm::vec3(1.0f, 0.0f, 0.0f)) * dr;
 	}
+
+	// Function for Reset
+	if (controls.reset){
+		std::cout<<"Reset function"<<std::endl;
+	}
+
+	if(controls.slide_up)
+	{
+		std::cout<<"sliding up"<<std::endl;
+
+	}
+
+
+
 	if (dr != glm::quat()) {
 		for (uint32_t x = 0; x < board_size.x; ++x) {
 			glm::quat &r = board_rotations[cursor.y * board_size.x + x];
@@ -360,7 +488,7 @@ void Game::draw(glm::uvec2 drawable_size) {
 
 	for (uint32_t y = 0; y < board_size.y; ++y) {
 		for (uint32_t x = 0; x < board_size.x; ++x) {
-			draw_mesh(tile_mesh,
+			draw_mesh(floor_mesh,
 				glm::mat4(
 					1.0f, 0.0f, 0.0f, 0.0f,
 					0.0f, 1.0f, 0.0f, 0.0f,
@@ -379,7 +507,7 @@ void Game::draw(glm::uvec2 drawable_size) {
 			);
 		}
 	}
-	draw_mesh(cursor_mesh,
+	draw_mesh(player_mesh,
 		glm::mat4(
 			1.0f, 0.0f, 0.0f, 0.0f,
 			0.0f, 1.0f, 0.0f, 0.0f,

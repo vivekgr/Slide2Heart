@@ -6,6 +6,8 @@
 #blender --background --python export-meshes.py -- <infile.blend> <outfile.blob>
 
 import sys
+import pdb
+
 
 args = []
 for i in range(0,len(sys.argv)):
@@ -27,6 +29,8 @@ import argparse
 bpy.ops.wm.open_mainfile(filepath=infile)
 
 do_texcoord = False
+
+color_info=True
 
 #names of objects whose meshes to write (not actually the names of the meshes):
 to_write = []
@@ -59,7 +63,8 @@ for name in to_write:
 	obj.select = True
 	bpy.context.scene.objects.active = obj
 
-	#subdivide object's mesh into triangles:
+	#subdivide object's mesh into triangles: 
+	# Rasterization is done - Displaying 3D objects in 2d Screen
 	bpy.ops.object.mode_set(mode='EDIT')
 	bpy.ops.mesh.select_all(action='SELECT')
 	bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
@@ -82,13 +87,21 @@ for name in to_write:
 	uvs = None
 	if do_texcoord:
 		if len(obj.data.uv_layers) == 0:
-			print("WARNING: trying to export texcoord data, but object '" + name + "' does not uv data; will output (0.0, 0.0)")
+			print("WARNING: trying to export texcoord data, but object '" + name + "' does not have uv data; will output (0.0, 0.0)")
 		else:
 			uvs = obj.data.uv_layers.active.data
 
+	#  To DO :Colors
+	cols= None
+	if color_info:
+		if (len(obj.data.vertex_colors)==0):
+			print("WARNING: trying to export color data, but object '" + name + "' does not have color data; will output (0.0, 0.0,0.0)")
+		else:
+			cols = obj.data.vertex_colors.active.data
+
 	#write the mesh:
 	for poly in mesh.polygons:
-		assert(len(poly.loop_indices) == 3)
+		assert(len(poly.loop_indices) == 3)  # Is it triangle that's why?
 		for i in range(0,3):
 			assert(mesh.loops[poly.loop_indices[i]].vertex_index == poly.vertices[i])
 			loop = mesh.loops[poly.loop_indices[i]]
@@ -97,10 +110,22 @@ for name in to_write:
 				data += struct.pack('f', x)
 			for x in loop.normal:
 				data += struct.pack('f', x)
+
 			#TODO: set 'col' based on object's active vertex colors array.
+			#pdb.set_trace()
+			if color_info:
+				if cols!=None:
+					col=mesh.vertex_colors['Col'].data[poly.vertices[i]].color # http://blenderscripting.blogspot.com/2013/03/vertex-color-map.html
+					# data += struct.pack('BBBB', int(col[0] * 255), int(col[1] * 255), int(col[2] * 255), 255)
+					data += struct.pack('BBBB', int(col.r * 255), int(col.g * 255), int(col.b * 255), 255)
+				else:
+					data +=struct.pack('BBBB',0,0,0,0)
+
+
 			# you should be able to use code much like the texcoord code below.
-			col = mathutils.Color((1.0, 1.0, 1.0))
-			data += struct.pack('BBBB', int(col.r * 255), int(col.g * 255), int(col.b * 255), 255)
+			#col = mesh.vertex_colors['Col'].data[poly.vertices[i]].color
+			#mathutils.Color((1.0, 1.0, 1.0))
+			#data += struct.pack('BBBB', int(col.r * 255), int(col.g * 255), int(col.b * 255), 255)
 
 			if do_texcoord:
 				if uvs != None:

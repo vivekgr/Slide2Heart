@@ -23,7 +23,8 @@
 int main(int argc, char **argv) {
 	struct {
 		//TODO: this is where you set the title and size of your game window
-		std::string title = "TODO: Game Title";
+		std::string title = "Slide2heart";
+		// 640 *480 Resolution
 		glm::uvec2 size = glm::uvec2(640, 400);
 	} config;
 
@@ -90,6 +91,7 @@ int main(int argc, char **argv) {
 
 	//------------ create game object (loads assets) --------------
 
+	
 	std::shared_ptr< Game > game = std::make_shared< Game >();
 
 	//------------ main loop ------------
