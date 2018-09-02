@@ -5,7 +5,7 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-
+#include<list>
 #include <vector>
 
 // The 'Game' struct holds all of the game-relevant state,
@@ -18,6 +18,8 @@ struct Game {
 	~Game();
 
 	std::vector<int> wall_indices;
+	std::vector<int> star_indices;
+
 
 	//handle_event is called when new mouse or keyboard events are received:
 	// (note that this might be many times per frame or never)
@@ -35,6 +37,11 @@ struct Game {
 
 	//check collision
 	bool check_collision(int x,int y,int board_width,int board_height,std::vector<int> &wall_indices);
+
+	//update Star points
+	bool update_starpoints(int x,int y,int board_width,int board_height,std::vector<int> &star_indices);
+
+	
 
 	//------- opengl resources -------
 
@@ -66,6 +73,8 @@ struct Game {
 		GLsizei count = 0;
 	};
 
+
+
 	Mesh gummy_mesh;
 	Mesh riflector_mesh;
 	Mesh floor_mesh;
@@ -81,6 +90,8 @@ struct Game {
 	Mesh egg_mesh;
 	Mesh cube_mesh;
 
+	//std::vector< Mesh const * > meshes{&wall_mesh,&starpoint_mesh,&gummy_mesh,&floor_mesh};
+
 	GLuint meshes_for_simple_shading_vao = -1U; //vertex array object that describes how to connect the meshes_vbo to the simple_shading_program
 
 	//------- game state -------
@@ -88,7 +99,10 @@ struct Game {
 	glm::uvec2 board_size = glm::uvec2(4,4);  // Board size 4*4
 	//std::vector<std::vector<Mesh const *> > matrix;
 	std::vector< Mesh const * > board_meshes;
+	//std::vector< Mesh const * > meshes;
 	std::vector< glm::quat > board_rotations;
+
+	
 
 	glm::uvec2 cursor = glm::vec2(0,0);
 

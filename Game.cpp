@@ -231,13 +231,14 @@ Game::Game() {
 	//set up game board with meshes and rolls:
 	//board meshes is a vector of type Mesh
 	//matrix.reserve(board_size.x * board_size.y);
+	//board_meshes.get_allocator().allocate(board_size.x * board_size.y);
 	board_meshes.reserve(board_size.x * board_size.y);
 	board_rotations.reserve(board_size.x * board_size.y);
 
 	// What is this? Random number generator
 	std::mt19937 mt(0xbead1234);
 
-	int randIndx;
+	int rand_idx;
 	// Vector of meshes (Of objects which are going to be place inside the grid)
 	std::vector< Mesh const * > meshes{&wall_mesh,&starpoint_mesh,&gummy_mesh,&floor_mesh};
 
@@ -249,18 +250,28 @@ Game::Game() {
 			board_meshes.emplace_back(&floor_mesh);
 
 		}
+		else if(i==7)
+		{
+			board_meshes.emplace_back(&goal_mesh);
+		}
 		else
 		{
-			randIndx=mt()%meshes.size();
-			std::cout<<"rand"<<randIndx;
-			board_meshes.emplace_back(meshes[randIndx]);
-			board_rotations.emplace_back(glm::quat());
+			rand_idx=mt()%meshes.size();
+			board_meshes.emplace_back(meshes[rand_idx]);
+			// board_rotations.emplace_back(glm::quat());
 
-			 if(randIndx==0) // It is a wall
+			 if(rand_idx==0) // It is a wall
 			 {
 			 	wall_indices.push_back(i);  // pushing the index at which the wall is place to the wall indices vector
 
 			 }
+			 if(rand_idx==1) // It is a starpoint
+			 {
+			 	std::cout<<"push";
+			 	star_indices.push_back(i);
+			 }
+			 std::cout<<"rand"<<rand_idx<<std::endl;
+
 		}
 		
 	}
@@ -322,68 +333,23 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 		}
 	}
 
-
 	//move player on L/R/U/D press:
 	if (evt.type == SDL_KEYDOWN && evt.key.repeat == 0) {
 		if (evt.key.keysym.scancode == SDL_SCANCODE_LEFT) 
 		{
-			if (cursor.x > 0) 
-			{
-				if((Game::check_collision(cursor.x-1,cursor.y,board_size.x,board_size.y,wall_indices)))
-				{
-					cursor.y=cursor.y;
-				}
-				else
-				{
-					cursor.x -= 1;
-				}
-				
-			}
+			controls.slide_left= (evt.type == SDL_KEYDOWN);
 			return true;
 		} else if (evt.key.keysym.scancode == SDL_SCANCODE_RIGHT) 
 		{
-			if (cursor.x + 1 < board_size.x) 
-			{
-				if((Game::check_collision(cursor.x+1,cursor.y,board_size.x,board_size.y,wall_indices)))
-				{
-					cursor.y=cursor.y;
-				}
-				else
-				{
-					cursor.x += 1;
-				}
-				
-			}
+			controls.slide_right= (evt.type == SDL_KEYDOWN);
 			return true;
 		} else if (evt.key.keysym.scancode == SDL_SCANCODE_UP) 
 		{
-			if (cursor.y + 1 < board_size.y) 
-			{
-				if((Game::check_collision(cursor.x,cursor.y+1,board_size.x,board_size.y,wall_indices)))
-				{
-					cursor.y=cursor.y;
-				}
-				else
-				{
-					cursor.y += 1;
-				}
-
-			}
+			controls.slide_up= (evt.type == SDL_KEYDOWN);
 			return true;
 		} else if (evt.key.keysym.scancode == SDL_SCANCODE_DOWN) 
 		{
-			if (cursor.y > 0) 
-			{
-				if((Game::check_collision(cursor.x,cursor.y-1,board_size.x,board_size.y,wall_indices)))
-				{
-					cursor.y=cursor.y;
-				}
-				else
-				{
-					cursor.y -= 1;
-				}
-				
-			}
+			controls.slide_down= (evt.type == SDL_KEYDOWN);
 			return true;
 		}
 	}
@@ -393,33 +359,43 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 
 bool Game::check_collision(int x, int y, int board_width,int board_height,std::vector<int>&wall_indices)
 {
-	std::cout<<"check collision"<<std::endl;
+	//std::cout<<"check collision"<<std::endl;
+	int key;
+	// Convert cursor x, y to 1 D using column major
+	key=y*board_width+x;
+	if(std::find(wall_indices.begin(),wall_indices.end(),key)!=wall_indices.end())
+	{
+		std::cout<<"collision detected--->"<<std::endl;
+		return true;
+	}
+		
+	return false;
+}
+
+bool Game::update_starpoints(int x,int y,int board_width,int board_height,std::vector<int>&star_indices)
+{
+	//std::cout<<"update starpoints"<<std::endl;
 	int key;
 	// Convert cursor x, y to 1 D using column major
 	key=y*board_width+x;
 
-	//IntIterator i = find(wall_indices.begin(),wall_indices,key);
-	if(std::find(wall_indices.begin(),wall_indices.end(),key)!=wall_indices.end())
+	//std::cout<<"key"<<key;
+	if(std::find(star_indices.begin(),star_indices.end(),key)!=star_indices.end())
 	{
-		std::cout<<"collision detected";
+		std::cout<<"Starpoint collected-->";
 		return true;
-	}
 		
-
-	// if((x==1&&(y+1)==1)&&chck_index==15)
-	// {
-	// 	std::cout<<"collision detected";
-	// 	return true;
-	// }
-	//else if((x+1==2&&y==0)&&chck_index==15)
+	}
 
 	return false;
 }
 
 void Game::update(float elapsed) {
 	//if the roll keys are pressed, rotate everything on the same row or column as the cursor:
+
 	glm::quat dr = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	float amt = elapsed * 1.0f;
+
 	if (controls.roll_left) {
 		dr = glm::angleAxis(amt, glm::vec3(0.0f, 1.0f, 0.0f)) * dr;
 	}
@@ -433,17 +409,91 @@ void Game::update(float elapsed) {
 		dr = glm::angleAxis(-amt, glm::vec3(1.0f, 0.0f, 0.0f)) * dr;
 	}
 
+	if (controls.slide_up) 
+	{
+		//std::cout<<"UP"<<std::endl;
+		if (cursor.y + 1 < board_size.y) 
+			{
+				//Collision Detection
+				if((Game::check_collision(cursor.x,cursor.y+1,board_size.x,board_size.y,wall_indices)))
+				{
+					cursor.y=cursor.y;
+				}
+				// Starpoint detection
+				else if((Game::update_starpoints(cursor.x,cursor.y+1,board_size.x,board_size.y,star_indices))) 
+				{
+					cursor.y += 1;
+					//board_meshes.erase(std::remove(board_meshes.begin(),board_meshes.end(),4),board_meshes.end());
+					//board_meshes.insert();
+				}
+				else
+				{
+					cursor.y += 1;
+				}
+
+			}
+		controls.slide_up=false;
+	}
+	if (controls.slide_down) 
+	{
+		//std::cout<<"DOWN"<<std::endl;
+		if (cursor.y > 0) 
+			{
+				if((Game::check_collision(cursor.x,cursor.y-1,board_size.x,board_size.y,wall_indices)))
+				{
+					cursor.y=cursor.y;
+				}
+				else
+				{
+					cursor.y -= 1;
+				}
+				
+			}
+		controls.slide_down=false;
+	}
+	if (controls.slide_left) 
+	{
+		//std::cout<<"LEFT"<<std::endl;
+		if (cursor.x > 0) 
+			{
+				if((Game::check_collision(cursor.x-1,cursor.y,board_size.x,board_size.y,wall_indices)))
+				{
+					cursor.y=cursor.y;
+				}
+				else
+				{
+					cursor.x -= 1;
+				}
+
+			}
+
+		controls.slide_left=false;
+
+	}
+	if (controls.slide_right) 
+	{
+		//std::cout<<"RIGHT"<<std::endl;
+		if (cursor.x + 1 < board_size.x) 
+			{
+				if((Game::check_collision(cursor.x+1,cursor.y,board_size.x,board_size.y,wall_indices)))
+				{
+					cursor.y=cursor.y;
+				}
+				else
+				{
+					cursor.x += 1;
+				}
+
+
+				
+			}
+		controls.slide_right=false;
+	}
+
 	// Function for Reset
 	if (controls.reset){
 		std::cout<<"Reset function"<<std::endl;
 	}
-
-	if(controls.slide_up)
-	{
-		std::cout<<"sliding up"<<std::endl;
-
-	}
-
 
 
 	if (dr != glm::quat()) {
