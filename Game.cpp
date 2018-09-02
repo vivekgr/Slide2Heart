@@ -11,6 +11,7 @@
 #include <map>
 #include <cstddef>
 #include <random>
+#include <algorithm>
 
 //helper defined later; throws if shader compilation fails:
 static GLuint compile_shader(GLenum type, std::string const &source);
@@ -235,6 +236,7 @@ Game::Game() {
 
 	// What is this? Random number generator
 	std::mt19937 mt(0xbead1234);
+
 	int randIndx;
 	// Vector of meshes (Of objects which are going to be place inside the grid)
 	std::vector< Mesh const * > meshes{&wall_mesh,&starpoint_mesh,&gummy_mesh,&floor_mesh};
@@ -247,30 +249,18 @@ Game::Game() {
 			board_meshes.emplace_back(&floor_mesh);
 
 		}
-		// else if(i==5||i==2||i==15)
-		// {
-		// 	// Static walls at the above locations
-		// 	board_meshes.emplace_back(&wall_mesh);
-		// 	chck_index=i;
-		// }
-		// else if(i==14||i==8)
-		// {
-		// 	// Static starpoints  at the above locations
-		// 	board_meshes.emplace_back(&starpoint_mesh);
-		// 	//score increment
-		// }
-		// else if (i==11)
-		// {
-		// 	//Static goal pos
-		// 	board_meshes.emplace_back(&goal_mesh);
-		// }
 		else
 		{
 			randIndx=mt()%meshes.size();
+			std::cout<<"rand"<<randIndx;
 			board_meshes.emplace_back(meshes[randIndx]);
 			board_rotations.emplace_back(glm::quat());
 
-			// if()
+			 if(randIndx==0) // It is a wall
+			 {
+			 	wall_indices.push_back(i);  // pushing the index at which the wall is place to the wall indices vector
+
+			 }
 		}
 		
 	}
@@ -335,23 +325,41 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 
 	//move player on L/R/U/D press:
 	if (evt.type == SDL_KEYDOWN && evt.key.repeat == 0) {
-		if (evt.key.keysym.scancode == SDL_SCANCODE_LEFT) {
-			if (cursor.x > 0) {
-				cursor.x -= 1;
+		if (evt.key.keysym.scancode == SDL_SCANCODE_LEFT) 
+		{
+			if (cursor.x > 0) 
+			{
+				if((Game::check_collision(cursor.x-1,cursor.y,board_size.x,board_size.y,wall_indices)))
+				{
+					cursor.y=cursor.y;
+				}
+				else
+				{
+					cursor.x -= 1;
+				}
+				
 			}
 			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
-			if (cursor.x + 1 < board_size.x) {
-				cursor.x += 1;
+		} else if (evt.key.keysym.scancode == SDL_SCANCODE_RIGHT) 
+		{
+			if (cursor.x + 1 < board_size.x) 
+			{
+				if((Game::check_collision(cursor.x+1,cursor.y,board_size.x,board_size.y,wall_indices)))
+				{
+					cursor.y=cursor.y;
+				}
+				else
+				{
+					cursor.x += 1;
+				}
+				
 			}
 			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_UP) {
+		} else if (evt.key.keysym.scancode == SDL_SCANCODE_UP) 
+		{
 			if (cursor.y + 1 < board_size.y) 
 			{
-				std::cout<<"x"<<cursor.x<<std::endl;
-				std::cout<<"y"<<cursor.y<<std::endl;
-				std::cout<<"chk"<<chck_index<<std::endl;
-				if(Game::check_collision(cursor.x,cursor.y,chck_index))
+				if((Game::check_collision(cursor.x,cursor.y+1,board_size.x,board_size.y,wall_indices)))
 				{
 					cursor.y=cursor.y;
 				}
@@ -362,9 +370,19 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 
 			}
 			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-			if (cursor.y > 0) {
-				cursor.y -= 1;
+		} else if (evt.key.keysym.scancode == SDL_SCANCODE_DOWN) 
+		{
+			if (cursor.y > 0) 
+			{
+				if((Game::check_collision(cursor.x,cursor.y-1,board_size.x,board_size.y,wall_indices)))
+				{
+					cursor.y=cursor.y;
+				}
+				else
+				{
+					cursor.y -= 1;
+				}
+				
 			}
 			return true;
 		}
@@ -373,17 +391,26 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 }
 
 
-bool Game::check_collision(int x, int y, int chck_index)
+bool Game::check_collision(int x, int y, int board_width,int board_height,std::vector<int>&wall_indices)
 {
 	std::cout<<"check collision"<<std::endl;
-	std::cout<<"x+1"<<x+1;
-	std::cout<<"y+1"<<y+1;
+	int key;
+	// Convert cursor x, y to 1 D using column major
+	key=y*board_width+x;
 
-	if((x==1&&(y+1)==1)&&chck_index==15)
+	//IntIterator i = find(wall_indices.begin(),wall_indices,key);
+	if(std::find(wall_indices.begin(),wall_indices.end(),key)!=wall_indices.end())
 	{
 		std::cout<<"collision detected";
 		return true;
 	}
+		
+
+	// if((x==1&&(y+1)==1)&&chck_index==15)
+	// {
+	// 	std::cout<<"collision detected";
+	// 	return true;
+	// }
 	//else if((x+1==2&&y==0)&&chck_index==15)
 
 	return false;

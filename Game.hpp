@@ -17,7 +17,7 @@ struct Game {
 	Game();
 	~Game();
 
-	int chck_index=0;
+	std::vector<int> wall_indices;
 
 	//handle_event is called when new mouse or keyboard events are received:
 	// (note that this might be many times per frame or never)
@@ -34,7 +34,7 @@ struct Game {
 	void reset();
 
 	//check collision
-	bool check_collision(int x,int y,int chck_index);
+	bool check_collision(int x,int y,int board_width,int board_height,std::vector<int> &wall_indices);
 
 	//------- opengl resources -------
 
