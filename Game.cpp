@@ -12,6 +12,8 @@
 #include <cstddef>
 #include <random>
 #include <algorithm>
+#include <string>
+#include <cstdlib>
 
 //helper defined later; throws if shader compilation fails:
 static GLuint compile_shader(GLenum type, std::string const &source);
@@ -240,7 +242,7 @@ Game::Game() {
 
 	int rand_idx;
 	// Vector of meshes (Of objects which are going to be place inside the grid)
-	std::vector< Mesh const * > meshes{&wall_mesh,&starpoint_mesh,&gummy_mesh,&floor_mesh};
+	std::vector< Mesh const * > meshes{&wall_mesh,&starpoint_mesh,&floor_mesh,&riflector_mesh,&hole_mesh};
 
 	for (uint32_t i = 0; i < board_size.x * board_size.y; ++i) // ??
 	{
@@ -250,13 +252,20 @@ Game::Game() {
 			board_meshes.emplace_back(&floor_mesh);
 
 		}
-		else if(i==7)
+		else if(i==39)
 		{
 			board_meshes.emplace_back(&goal_mesh);
 		}
+		else if(i==42)
+		{
+			board_meshes.emplace_back(&gummy_mesh);
+		}
+
 		else
 		{
 			rand_idx=mt()%meshes.size();
+			//rand_idx=rand()%3;
+			std::cout<<"randIdx"<<rand_idx<<std::endl;
 			board_meshes.emplace_back(meshes[rand_idx]);
 			// board_rotations.emplace_back(glm::quat());
 
@@ -266,25 +275,29 @@ Game::Game() {
 
 			 }
 			 if(rand_idx==1) // It is a starpoint
-			 {
-			 	std::cout<<"push";
+			 { 
+			 	//starpos=i;
 			 	star_indices.push_back(i);
-			 }
-			 std::cout<<"rand"<<rand_idx<<std::endl;
+			 	//std::cout<<"starpos"<<starpos<<std::endl;
 
+			 }
+			 if(rand_idx==4) // It is a hole
+			 { 
+			 	//starpos=i;
+			 	hole_indices.push_back(i);
+
+			 }
+			 if(rand_idx==3) // It is a riflector
+			 { 
+			 	//starpos=i;
+			 	riflector_indices.push_back(i);
+
+			 }
+			 
 		}
 		
 	}
 
-	// for (uint32_t i = 0; i < board_size.x; ++i) 
-	// {
-	// 		for (uint32_t j = 0; j < board_size.y; ++j) 
-	// 		{
-	// 			matrix[i][j]=meshes[mt()%meshes.size()];
-	// 		}
-	// }
-	
-	
 }
 
 
@@ -306,23 +319,7 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 	if (evt.type == SDL_KEYDOWN && evt.key.repeat) {
 		return false;
 	}
-	//handle tracking the state of WSAD for roll control:
-	if (evt.type == SDL_KEYDOWN || evt.type == SDL_KEYUP) {
-		if (evt.key.keysym.scancode == SDL_SCANCODE_W) {
-			controls.roll_up = (evt.type == SDL_KEYDOWN);
-			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_S) {
-			controls.roll_down = (evt.type == SDL_KEYDOWN);
-			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_A) {
-			controls.roll_left = (evt.type == SDL_KEYDOWN);
-			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_D) {
-			controls.roll_right = (evt.type == SDL_KEYDOWN);
-			return true;
-		}
-	}
-
+	
 
 	// If Reset Button 'R' is pressed
 	if (evt.type == SDL_KEYDOWN || evt.type == SDL_KEYUP) 
@@ -334,7 +331,8 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 	}
 
 	//move player on L/R/U/D press:
-	if (evt.type == SDL_KEYDOWN && evt.key.repeat == 0) {
+	if (evt.type == SDL_KEYDOWN ) {
+	//if (evt.type == SDL_KEYDOWN && evt.key.repeat == 0) {
 		if (evt.key.keysym.scancode == SDL_SCANCODE_LEFT) 
 		{
 			controls.slide_left= (evt.type == SDL_KEYDOWN);
@@ -372,7 +370,7 @@ bool Game::check_collision(int x, int y, int board_width,int board_height,std::v
 	return false;
 }
 
-bool Game::update_starpoints(int x,int y,int board_width,int board_height,std::vector<int>&star_indices)
+bool Game::check_objects_hit(int x,int y,int board_width,int board_height,std::vector<int>&star_indices)
 {
 	//std::cout<<"update starpoints"<<std::endl;
 	int key;
@@ -389,6 +387,8 @@ bool Game::update_starpoints(int x,int y,int board_width,int board_height,std::v
 
 	return false;
 }
+
+
 
 void Game::update(float elapsed) {
 	//if the roll keys are pressed, rotate everything on the same row or column as the cursor:
@@ -420,11 +420,23 @@ void Game::update(float elapsed) {
 					cursor.y=cursor.y;
 				}
 				// Starpoint detection
-				else if((Game::update_starpoints(cursor.x,cursor.y+1,board_size.x,board_size.y,star_indices))) 
+				else if((Game::check_objects_hit(cursor.x,cursor.y+1,board_size.x,board_size.y,star_indices))) 
 				{
 					cursor.y += 1;
-					//board_meshes.erase(std::remove(board_meshes.begin(),board_meshes.end(),4),board_meshes.end());
-					//board_meshes.insert();
+					star_points+=1;
+
+				}
+				else if((Game::check_objects_hit(cursor.x,cursor.y-1,board_size.x,board_size.y,hole_indices))) 
+				{
+					cursor.y -= 1;
+					star_points-=1;
+					hole_points+=1;
+				}
+				else if((Game::check_objects_hit(cursor.x,cursor.y+1,board_size.x,board_size.y,riflector_indices))) 
+				{
+					cursor.y += 1;
+					cursor.x+=1;
+				
 				}
 				else
 				{
@@ -443,6 +455,24 @@ void Game::update(float elapsed) {
 				{
 					cursor.y=cursor.y;
 				}
+				else if((Game::check_objects_hit(cursor.x,cursor.y-1,board_size.x,board_size.y,star_indices))) 
+				{
+					cursor.y -= 1;
+					star_points+=1;
+				}
+				else if((Game::check_objects_hit(cursor.x,cursor.y-1,board_size.x,board_size.y,hole_indices))) 
+				{
+					cursor.y -= 1;
+					star_points-=1;
+					hole_points+=1;
+				}
+				else if((Game::check_objects_hit(cursor.x,cursor.y-1,board_size.x,board_size.y,riflector_indices))) 
+				{
+					cursor.y -= 1;
+					cursor.x+=1;
+
+				
+				}
 				else
 				{
 					cursor.y -= 1;
@@ -459,6 +489,24 @@ void Game::update(float elapsed) {
 				if((Game::check_collision(cursor.x-1,cursor.y,board_size.x,board_size.y,wall_indices)))
 				{
 					cursor.y=cursor.y;
+				}
+				else if((Game::check_objects_hit(cursor.x-1,cursor.y,board_size.x,board_size.y,star_indices))) 
+				{
+					cursor.x -= 1;
+					star_points+=1;
+				}
+				else if((Game::check_objects_hit(cursor.x-1,cursor.y,board_size.x,board_size.y,hole_indices))) 
+				{
+					cursor.x -= 1;
+					star_points-=1;
+					hole_points+=1;
+				}
+				else if((Game::check_objects_hit(cursor.x-1,cursor.y,board_size.x,board_size.y,riflector_indices))) 
+				{
+					cursor.y += 1;
+					cursor.x-=1;
+
+				
 				}
 				else
 				{
@@ -479,9 +527,26 @@ void Game::update(float elapsed) {
 				{
 					cursor.y=cursor.y;
 				}
-				else
+				else if((Game::check_objects_hit(cursor.x+1,cursor.y,board_size.x,board_size.y,star_indices))) 
 				{
 					cursor.x += 1;
+					star_points+=1;
+				}
+				else if((Game::check_objects_hit(cursor.x+1,cursor.y,board_size.x,board_size.y,hole_indices))) 
+				{
+					cursor.x += 1;
+					star_points-=1;
+					hole_points+=1;
+				}
+				else if((Game::check_objects_hit(cursor.x+1,cursor.y,board_size.x,board_size.y,riflector_indices))) 
+				{
+					cursor.y -= 1;
+					cursor.x+=1;
+				
+				}
+				else
+				{
+					cursor.x+= 1;
 				}
 
 
@@ -493,6 +558,7 @@ void Game::update(float elapsed) {
 	// Function for Reset
 	if (controls.reset){
 		std::cout<<"Reset function"<<std::endl;
+		//Game::reset();
 	}
 
 
@@ -563,7 +629,8 @@ void Game::draw(glm::uvec2 drawable_size) {
 		glDrawArrays(GL_TRIANGLES, mesh.first, mesh.count);
 	};
 
-	for (uint32_t y = 0; y < board_size.y; ++y) {
+	for (uint32_t y = 0; y < board_size.y; ++y) 
+	{
 		for (uint32_t x = 0; x < board_size.x; ++x) {
 			draw_mesh(floor_mesh,
 				glm::mat4(
@@ -593,6 +660,41 @@ void Game::draw(glm::uvec2 drawable_size) {
 		)
 	);
 
+	std::cout<<"points"<<star_points<<std::endl;
+
+   // For points decrement
+	if(hole_points!=0)
+	{
+		for(int i=0;i<hole_points;i++)
+		{
+				draw_mesh(hole_mesh,
+			glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				board_size.x+0.5f,i, 0.0f, 1.0f
+			)	
+			);
+
+		}
+	 }
+
+	// for points increment
+	if(star_points>total_points)
+	{
+		for(int i=0;i<total_points;i++)
+		{
+				draw_mesh(starpoint_mesh,
+			glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				board_size.x+0.5f,i, 0.0f, 1.0f
+			)	
+			);
+
+		}
+	 }
 
 	glUseProgram(0);
 

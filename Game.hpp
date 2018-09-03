@@ -17,8 +17,13 @@ struct Game {
 	Game();
 	~Game();
 
+	int star_points=0;
+	int total_points=5;
+	int hole_points=0;
 	std::vector<int> wall_indices;
 	std::vector<int> star_indices;
+	std::vector<int> riflector_indices;
+	std::vector<int> hole_indices;
 
 
 	//handle_event is called when new mouse or keyboard events are received:
@@ -39,7 +44,9 @@ struct Game {
 	bool check_collision(int x,int y,int board_width,int board_height,std::vector<int> &wall_indices);
 
 	//update Star points
-	bool update_starpoints(int x,int y,int board_width,int board_height,std::vector<int> &star_indices);
+	bool check_objects_hit(int x,int y,int board_width,int board_height,std::vector<int> &star_indices);
+
+	
 
 	
 
@@ -96,7 +103,7 @@ struct Game {
 
 	//------- game state -------
 
-	glm::uvec2 board_size = glm::uvec2(4,4);  // Board size 4*4
+	glm::uvec2 board_size = glm::uvec2(8,8);  // Board size 4*4
 	//std::vector<std::vector<Mesh const *> > matrix;
 	std::vector< Mesh const * > board_meshes;
 	//std::vector< Mesh const * > meshes;
