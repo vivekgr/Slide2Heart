@@ -1,23 +1,30 @@
 # Game Information
-(Note: fill in this portion with information about your game.)
+### Title: Slide2Heart
+Author: Vivek Gopal Ramaswamy  
+Andrew id: vgramasw@andrew.cmu.edu  
 
-Title: (TODO: your game's title)
+Design Document:     
+[game0-design](https://github.com/vivekgr/game0-design)
 
-Author: (TODO: your name)
+Screen Shot:  
+![Screen Shot](game1.JPG)
 
-Design Document: [TODO: name of design document](TODO: link to design document)
+![Game Win](game2.JPG)  
 
-Screen Shot:
+Difficulties Encountered:  
+These are the following difficulties which I had faced:
+1. Understanding the blender software for drawing game assets
+2. comprehending the flow on how to extract information and put all of them in the Vertex buffer
+3. Debugging object rendering-This took a lot of time and still I am not convinced to why it is happenning.
 
-![Screen Shot](screenshot.png)
+Good Code:  
+Given my game, the objective was to place objects randomly and then check for special cases like collison or a 90 degree turn or a increment in the score. I came up with an algorithm using vectors and conversion of 2D coordinates to 1D indices(using the grid as a column major). So everytime an object is placed in the grid, the corresponding 2D coordinates would be converted to 1D indices and will be stored in the vector.When the cursor moves to that particular location, I check whether there is an collision or not.
 
-Difficulties Encountered:
-
-TODO: write several sentences about any difficulties you may have encountered in creating the game.
-
-Good Code:
-
-TODO: write a sentence or two about any code you think you did particularly well.
+Things that can be improved/added:  
+1. Reset button 
+2. Add sound
+3. Text to display the scores
+4. Make it more interactive  
 
 # Using This Base Code
 
