@@ -2,8 +2,9 @@
 ### Title: Slide2Heart
 Author: Vivek Gopal Ramaswamy  
 Andrew id: vgramasw@andrew.cmu.edu  
-Design Document:   
-[TODO: name of design document](TODO: link to design document)
+
+Design Document:     
+[game0-design](https://github.com/vivekgr/game0-design)
 
 Screen Shot:  
 ![Screen Shot](game1.JPG)
