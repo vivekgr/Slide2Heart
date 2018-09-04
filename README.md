@@ -1,15 +1,14 @@
 # Game Information
-(Note: fill in this portion with information about your game.)
 
-Title: (TODO: your game's title)
-
-Author: (TODO: your name)
+Title: Slide2Heart
+Author: Vivek Gopal Ramaswamy 
+Andrew id: vgramasw@andrew.cmu.edu
 
 Design Document: [TODO: name of design document](TODO: link to design document)
 
 Screen Shot:
 
-![Screen Shot](screenshot.png)
+![Screen Shot](game1.JPG)
 
 Difficulties Encountered:
 
