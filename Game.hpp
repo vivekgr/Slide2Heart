@@ -20,6 +20,9 @@ struct Game {
 	int star_points=0;
 	int total_points=5;
 	int hole_points=0;
+	bool hole_flag=false;
+	bool star_flag=false;
+	int goal_key=0;
 	std::vector<int> wall_indices;
 	std::vector<int> star_indices;
 	std::vector<int> riflector_indices;
@@ -38,7 +41,7 @@ struct Game {
 	void draw(glm::uvec2 drawable_size);
 
 	// Reset the game
-	void reset();
+	//void reset();
 
 	//check collision
 	bool check_collision(int x,int y,int board_width,int board_height,std::vector<int> &wall_indices);
@@ -114,10 +117,6 @@ struct Game {
 	glm::uvec2 cursor = glm::vec2(0,0);
 
 	struct {
-		bool roll_left = false;
-		bool roll_right = false;
-		bool roll_up = false;
-		bool roll_down = false;
 		bool slide_left=false;
 		bool slide_right=false;
 		bool slide_up=false;

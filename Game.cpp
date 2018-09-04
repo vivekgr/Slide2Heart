@@ -238,7 +238,7 @@ Game::Game() {
 	board_rotations.reserve(board_size.x * board_size.y);
 
 	// What is this? Random number generator
-	std::mt19937 mt(0xbead1234);
+	//std::mt19937 mt(0xbead1234);
 
 	int rand_idx;
 	// Vector of meshes (Of objects which are going to be place inside the grid)
@@ -263,8 +263,8 @@ Game::Game() {
 
 		else
 		{
-			rand_idx=mt()%meshes.size();
-			//rand_idx=rand()%3;
+			//rand_idx=mt()%meshes.size();
+			rand_idx=rand()%meshes.size();
 			std::cout<<"randIdx"<<rand_idx<<std::endl;
 			board_meshes.emplace_back(meshes[rand_idx]);
 			// board_rotations.emplace_back(glm::quat());
@@ -393,22 +393,6 @@ bool Game::check_objects_hit(int x,int y,int board_width,int board_height,std::v
 void Game::update(float elapsed) {
 	//if the roll keys are pressed, rotate everything on the same row or column as the cursor:
 
-	glm::quat dr = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	float amt = elapsed * 1.0f;
-
-	if (controls.roll_left) {
-		dr = glm::angleAxis(amt, glm::vec3(0.0f, 1.0f, 0.0f)) * dr;
-	}
-	if (controls.roll_right) {
-		dr = glm::angleAxis(-amt, glm::vec3(0.0f, 1.0f, 0.0f)) * dr;
-	}
-	if (controls.roll_up) {
-		dr = glm::angleAxis(amt, glm::vec3(1.0f, 0.0f, 0.0f)) * dr;
-	}
-	if (controls.roll_down) {
-		dr = glm::angleAxis(-amt, glm::vec3(1.0f, 0.0f, 0.0f)) * dr;
-	}
-
 	if (controls.slide_up) 
 	{
 		//std::cout<<"UP"<<std::endl;
@@ -424,6 +408,7 @@ void Game::update(float elapsed) {
 				{
 					cursor.y += 1;
 					star_points+=1;
+					star_flag=true;
 
 				}
 				else if((Game::check_objects_hit(cursor.x,cursor.y-1,board_size.x,board_size.y,hole_indices))) 
@@ -431,6 +416,7 @@ void Game::update(float elapsed) {
 					cursor.y -= 1;
 					star_points-=1;
 					hole_points+=1;
+					hole_flag=true;
 				}
 				else if((Game::check_objects_hit(cursor.x,cursor.y+1,board_size.x,board_size.y,riflector_indices))) 
 				{
@@ -459,12 +445,15 @@ void Game::update(float elapsed) {
 				{
 					cursor.y -= 1;
 					star_points+=1;
+					star_flag=true;
+
 				}
 				else if((Game::check_objects_hit(cursor.x,cursor.y-1,board_size.x,board_size.y,hole_indices))) 
 				{
 					cursor.y -= 1;
 					star_points-=1;
 					hole_points+=1;
+					hole_flag=true;
 				}
 				else if((Game::check_objects_hit(cursor.x,cursor.y-1,board_size.x,board_size.y,riflector_indices))) 
 				{
@@ -494,12 +483,15 @@ void Game::update(float elapsed) {
 				{
 					cursor.x -= 1;
 					star_points+=1;
+					star_flag=true;
+
 				}
 				else if((Game::check_objects_hit(cursor.x-1,cursor.y,board_size.x,board_size.y,hole_indices))) 
 				{
 					cursor.x -= 1;
 					star_points-=1;
 					hole_points+=1;
+					hole_flag=true;
 				}
 				else if((Game::check_objects_hit(cursor.x-1,cursor.y,board_size.x,board_size.y,riflector_indices))) 
 				{
@@ -531,12 +523,16 @@ void Game::update(float elapsed) {
 				{
 					cursor.x += 1;
 					star_points+=1;
+					star_flag=true;
+
 				}
 				else if((Game::check_objects_hit(cursor.x+1,cursor.y,board_size.x,board_size.y,hole_indices))) 
 				{
 					cursor.x += 1;
 					star_points-=1;
 					hole_points+=1;
+					hole_flag=true;
+					
 				}
 				else if((Game::check_objects_hit(cursor.x+1,cursor.y,board_size.x,board_size.y,riflector_indices))) 
 				{
@@ -562,18 +558,14 @@ void Game::update(float elapsed) {
 	}
 
 
-	if (dr != glm::quat()) {
-		for (uint32_t x = 0; x < board_size.x; ++x) {
-			glm::quat &r = board_rotations[cursor.y * board_size.x + x];
-			r = glm::normalize(dr * r);
-		}
-		for (uint32_t y = 0; y < board_size.y; ++y) {
-			if (y != cursor.y) {
-				glm::quat &r = board_rotations[y * board_size.x + cursor.x];
-				r = glm::normalize(dr * r);
-			}
-		}
-	}
+	goal_key=cursor.y*board_size.y+cursor.x;
+
+
+	std::cout<<" total points"<<star_points<<std::endl;
+	std::cout<<"--------------"<<std::endl;
+	std::cout<<" hole points"<<hole_points<<std::endl;
+
+
 }
 
 void Game::draw(glm::uvec2 drawable_size) {
@@ -660,10 +652,10 @@ void Game::draw(glm::uvec2 drawable_size) {
 		)
 	);
 
-	std::cout<<"points"<<star_points<<std::endl;
+	
 
    // For points decrement
-	if(hole_points!=0)
+	if(hole_flag)
 	{
 		for(int i=0;i<hole_points;i++)
 		{
@@ -672,17 +664,22 @@ void Game::draw(glm::uvec2 drawable_size) {
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				board_size.x+0.5f,i, 0.0f, 1.0f
+				board_size.x+1.5f,i, 0.0f, 1.0f
 			)	
 			);
 
 		}
+
+		if(hole_points>total_points)
+		{
+			std::cout<<"**************** YOU LOOSE********************"<<std::endl;
+		}
 	 }
 
 	// for points increment
-	if(star_points>total_points)
+	if(star_flag)
 	{
-		for(int i=0;i<total_points;i++)
+		for(int i=0;i<star_points;i++)
 		{
 				draw_mesh(starpoint_mesh,
 			glm::mat4(
@@ -692,9 +689,24 @@ void Game::draw(glm::uvec2 drawable_size) {
 				board_size.x+0.5f,i, 0.0f, 1.0f
 			)	
 			);
-
 		}
+		if(star_points>=total_points&&goal_key==39)
+		{
+				draw_mesh(goal_mesh,
+			glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				board_size.x+1.5f,board_size.y-3, 0.0f, 1.0f
+				)
+			);
+	 
+			std::cout<<"**************** YOU WIN********************"<<std::endl;
+		}
+		
 	 }
+
+	
 
 	glUseProgram(0);
 
