@@ -18,7 +18,7 @@ These are the following difficulties which I had faced:
 3. Debugging object rendering-This took a lot of time and still I am not convinced to why it is happenning.
 
 Good Code:  
-Given my game, the objective was to place objects randomly and then check for special cases like collision or a 90 degree turn or a increment in the score. I came up with an algorithm using vectors and conversion of 2D coordinates to 1D indices(using the grid as a column major). So everytime an object is placed in the grid, the corresponding 2D coordinates would be converted to 1D indices and will be stored in the vector.When the cursor moves to that particular location, I check whether there is an collision or not.
+Given my game, the objective was to place objects randomly and then check for special cases like collison or a 90 degree turn or a increment in the score. I came up with an algorithm using vectors and conversion of 2D coordinates to 1D indices(using the grid as a column major). So everytime an object is placed in the grid, the corresponding 2D coordinates would be converted to 1D indices and will be stored in the vector.When the cursor moves to that particular location, I check whether there is an collision or not.
 
 Things that can be improved/added:  
 1. Reset button 
